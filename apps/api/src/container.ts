@@ -30,7 +30,7 @@ import { NotificationService } from '@sorani/notifications';
 import { AnalyticsService } from '@sorani/analytics';
 import { LLMProviderRegistry, LMStudioProvider, FallbackLLMProvider } from '@sorani/provider-llm';
 import { SimulationAgentLLM } from '@sorani/ai';
-import { STTProviderRegistry, MockSTTProvider, OpenAIWhisperProvider, kurdishSTTProvider } from '@sorani/provider-stt';
+import { STTProviderRegistry, MockSTTProvider, OpenAIWhisperProvider, kurdishSTTProvider, localWhisperSTTProvider } from '@sorani/provider-stt';
 import { TTSProviderRegistry, MockTTSProvider, elevenLabsTTSProvider, azureTTSProvider, kurdishTTSProvider, ROJIN_VOICE } from '@sorani/provider-tts';
 import { TelephonyProviderRegistry, MockTelephonyProvider, TwilioProvider } from '@sorani/provider-telephony';
 import { buildDefaultReservationProviders } from '@sorani/provider-reservations';
@@ -145,6 +145,7 @@ export function buildContainer(cfg?: Config): AppContainer {
     sttRegistry.register(new OpenAIWhisperProvider({ apiKey: config.provider.openaiApiKey, model: config.provider.openaiSttModel }));
   }
   sttRegistry.register(kurdishSTTProvider({ apiKey: config.provider.kurdishSttApiKey, dialect: 'sorani' }));
+  sttRegistry.register(localWhisperSTTProvider({ url: config.provider.sttWhisperUrl }));
   const stt = sttRegistry.get(config.provider.stt);
 
   const ttsRegistry = new TTSProviderRegistry();

@@ -26,6 +26,7 @@ export interface Config {
     openaiModel: string;
     openaiSttModel: string;
     kurdishSttApiKey: string;
+    sttWhisperUrl: string;
     anthropicApiKey: string;
     anthropicModel: string;
     ttsVoiceId: string;
@@ -93,6 +94,7 @@ export function createConfig(overrides: Partial<Config> = {}): Config {
       openaiModel: env('OPENAI_MODEL', 'gpt-4o-mini'),
       openaiSttModel: env('OPENAI_STT_MODEL', 'whisper-1'),
       kurdishSttApiKey: env('KURDISH_STT_API_KEY', ''),
+      sttWhisperUrl: env('STT_WHISPER_URL', 'http://localhost:5100'),
       anthropicApiKey: env('ANTHROPIC_API_KEY', ''),
       anthropicModel: env('ANTHROPIC_MODEL', 'claude-3-5-sonnet'),
       ttsVoiceId: env('TTS_VOICE_ID', 'sorani-female-rojin'),

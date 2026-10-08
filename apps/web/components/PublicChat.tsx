@@ -116,10 +116,17 @@ export default function PublicChat() {
   };
 
   const startListen = () => {
-    const m = navigator.mediaDevices?.getUserMedia;
-    if (!m || typeof MediaRecorder === 'undefined') { setErr('مایکڕۆفۆن نەدۆزرایەوە'); return; }
+    // Insecure context (non-HTTPS) has NO navigator.mediaDevices at all.
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      const isHttps = typeof window !== 'undefined' && window.isSecureContext;
+      setErr(isHttps
+        ? 'مایکڕۆفۆن لەم وێبگەڕەدا نەدۆزرایەوە یان ناچالاکە. تکایە وێبگەڕێکی تر تاقی بکەوە یان بنووسە.'
+        : 'ئەم پەڕەیە بە HTTPS نەکراوەتەوە — مایکڕۆفۆن تەنها لەسەر HTTPS کاردەکات. تکایە بە لینکی https بگەڕێوە یان بنووسە.');
+      return;
+    }
+    if (typeof MediaRecorder === 'undefined') { setErr('مایکڕۆفۆن نەدۆزرایەوە'); return; }
     setErr(''); setListening(true);
-    m({ audio: true }).then((stream) => {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       streamRef.current = stream;
       const type = (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm');
       const mr = new MediaRecorder(stream, { mimeType: type });
@@ -130,10 +137,12 @@ export default function PublicChat() {
       mediaRecorderRef.current = mr;
     }).catch((e: any) => {
       setListening(false);
+      const name = e?.name || e?.message || String(e);
+      console.error('[mic] getUserMedia error:', e);
       const denied = e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError');
       setErr(denied
         ? 'ڕێگەپێدان بە مایکڕۆفۆن نەدرا — تکایە لە هێڵی ناونیشانی وێبگەڕەکەت ڕێگە بدە (Allow) ئینجا دووبارە هەوڵبدەرەوە. یان دەتوانیت بنووسیت.'
-        : 'مایکڕۆفۆنەکە بەردەست نییە. تکایە بنووسە یان دووبارە هەوڵبدەرەوە.');
+        : `مایکڕۆفۆنەکە بەردەست نییە (${name}). تکایە بنووسە یان دووبارە هەوڵبدەرەوە.`);
     });
   };
   const stopListen = () => {

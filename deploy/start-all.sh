@@ -8,7 +8,8 @@
 # Usage:  bash deploy/start-all.sh
 # ===========================================================================
 set -e
-export PATH="$HOME/.node20/node-v20.20.2-win-x64:$PATH"
+# Node 20 is installed system-wide under C:/Program Files/nodejs (in PATH).
+# (Old override below kept for reference; not needed now.)
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 

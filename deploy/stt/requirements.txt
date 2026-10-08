@@ -1,0 +1,8 @@
+# Installed via system Python 3.11 (no venv required on this machine).
+torch
+transformers
+librosa
+soundfile
+fastapi
+uvicorn
+numpy

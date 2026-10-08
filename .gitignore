@@ -34,3 +34,6 @@ Thumbs.db
 
 # runtime
 coverage/
+
+# local Sorani Whisper model (925MB) - downloaded separately, not committed
+/deploy/stt/model/
