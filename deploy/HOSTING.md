@@ -15,16 +15,24 @@ gerektirmeyen bir yayın kurulumu:
 
 ## 1) Backend API → Render
 1. [render.com](https://render.com) → ücretsiz hesap aç.
-2. **New → Web Service** → senin **repo** (GitHub/GitLab) bağla; yoksa repo'yu yükle.
-3. Ayarlar:
-   - **Root Directory:** (monorepo olduğu için kök)
-   - **Build Command:** `npm install && npm run build:prod`
-   - **Start Command:** `npm run start:api`
-   - **Environment:** Node 20
-4. **Environment (env) ekle** (`.env` dosyandan doldur — asla commit etme):
+> **Önemli (deploy başarısızlığıyla ilgili):** Monorepo `node_modules`'ta Node 12/npm 6
+> **varsa** derleme komutu (`npm run build --workspace X`) sonsuz döngüye girer ve Render
+> "Deploy failed" verir. Bu yüzden Node 20 + npm 10 gereklidir (aşağıda).
+> Ayrıca **PORT'u asla elle 4000 yapma** — Render kendi PORT'unu enjekte eder; zorlarsan
+> sağlık kontrolü başarısız olur ve deploy reddedilir.
+
+2. **New → Web Service** → senin **repo** (GitHub/GitLab) bağla.
+   - Doğrudan `render.yaml` blueprint olarak okunur (Build `npm run build:api`, Start
+     `npm run start:api`, PORT otomatik). Repodaki `render.yaml` bunu zaten doğru kurar.
+   - Elle Web Service de açabilirsin; o zaman ayarlar:
+     - **Root Directory:** kök (monorepo)
+     - **Environment / Runtime:** **Node (20)**  ← Node 12 kullanma! Bu kritik.
+     - **Build Command:** `npm install && npm run build:api`
+     - **Start Command:** `npm run start:api`
+     - **Health Check Path:** `/api/health`
+3. **Environment (env) ekle** (`.env` dosyandan doldur — asla commit etme):
    ```
    NODE_ENV=production
-   PORT=4000
    TZ=Asia/Erbil
    TTS_PROVIDER=kurdishtts
    STT_PROVIDER=kurdishtts
@@ -32,7 +40,8 @@ gerektirmeyen bir yayın kurulumu:
    KURDISH_TTS_API_KEY=<senin anahtarın>
    KURDISH_STT_API_KEY=<senin anahtarın>
    ```
-5. Deploy → sana `https://sorani-api.onrender.com` verir. Test: `https://.../api/health`.
+   > **PORT** satırı ekleme — Render onu kendisi atar.
+4. Deploy → sana `https://sorani-api.onrender.com` verir. Test: `https://.../api/health`.
 
 ## 2) Frontend web → Vercel
 1. [vercel.com](https://vercel.com) → ücretsiz hesap aç → **Add New → Project** → repo bağla.
