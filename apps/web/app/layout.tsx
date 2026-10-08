@@ -1,0 +1,21 @@
+import type { Metadata } from 'next';
+import './globals.css';
+import AppShell from '../components/AppShell';
+import { LanguageProvider } from '../components/LanguageContext';
+
+export const metadata: Metadata = {
+  title: 'Sorani AI Call Center',
+  description: 'Multi-restaurant Sorani AI voice reservation platform',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <LanguageProvider>
+          <AppShell>{children}</AppShell>
+        </LanguageProvider>
+      </body>
+    </html>
+  );
+}

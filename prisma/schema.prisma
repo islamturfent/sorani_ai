@@ -1,0 +1,326 @@
+// ===========================================================================
+// SORANI AI CALL CENTER - Multi-tenant Prisma schema (spec §29)
+// ===========================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy
+// ---------------------------------------------------------------------------
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  status    String   @default("ACTIVE")
+  plan      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurants       Restaurant[]
+  customers         Customer[]
+  reservations      Reservation[]
+  calls             Call[]
+  users             User[]
+  agentSessions     AgentSession[]
+  notifications     Notification[]
+}
+
+// ---------------------------------------------------------------------------
+// Restaurants (multi-branch, provider-connected)
+// ---------------------------------------------------------------------------
+model Restaurant {
+  id                            String       @id @default(cuid())
+  tenantId                      String
+  name                          String
+  description                   String?
+  cuisineTypes                  String[]
+  priceRange                    String?
+  rating                        Float?
+  features                      String[]
+  website                       String?
+  phoneNumbers                  String[]
+  directBookingEnabled          Boolean      @default(true)
+  phoneBookingEnabled           Boolean      @default(true)
+  status                        String       @default("ACTIVE")
+  reservationProvider           String?
+  reservationProviderRestaurantId String?
+  createdAt                     DateTime     @default(now())
+  updatedAt                     DateTime     @updatedAt
+
+  tenant         Tenant                    @relation(fields: [tenantId], references: [id])
+  locations      RestaurantLocation[]
+  providerConnections RestaurantProviderConnection[]
+  hours          RestaurantHours[]
+  restaurantFeatures RestaurantFeature[]
+  reservations   Reservation[]
+
+  @@index([tenantId])
+}
+
+model RestaurantLocation {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String
+  address      String
+  city         String
+  country      String
+  latitude     Float?
+  longitude    Float?
+  phone        String?
+  timezone     String   @default("Asia/Baghdad")
+  createdAt    DateTime @default(now())
+
+  restaurant Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  hours      RestaurantHours[]
+  reservations Reservation[]
+
+  @@index([restaurantId])
+}
+
+model RestaurantProviderConnection {
+  id                     String   @id @default(cuid())
+  restaurantId           String
+  providerType           String
+  externalRestaurantId   String?
+  credentialsEncrypted   String?
+  configuration          Json?
+  status                 String   @default("ACTIVE")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+}
+
+model RestaurantHours {
+  id           String   @id @default(cuid())
+  restaurantId String
+  locationId   String?
+  dayOfWeek    Int
+  open         String
+  close        String
+  closed       Boolean  @default(false)
+
+  restaurant Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  location   RestaurantLocation? @relation(fields: [locationId], references: [id])
+}
+
+model RestaurantFeature {
+  id           String @id @default(cuid())
+  restaurantId String
+  feature      String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+}
+
+// ---------------------------------------------------------------------------
+// Customers
+// ---------------------------------------------------------------------------
+model Customer {
+  id               String   @id @default(cuid())
+  tenantId         String
+  name             String?
+  phone            String?
+  email            String?
+  preferredLanguage String? @default("ckb")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  reservations Reservation[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Reservations + events + provider transactions
+// ---------------------------------------------------------------------------
+model Reservation {
+  id                    String    @id @default(cuid())
+  tenantId              String
+  restaurantId          String
+  locationId            String?
+  status                String    @default("PENDING")
+  date                  String
+  time                  String
+  guests                Int
+  customerName          String?
+  customerPhone         String?
+  specialRequests       String?
+  provider              String?
+  externalReservationId String?
+  idempotencyKey        String?   @unique
+  createdBy             String?   @default("api")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  confirmedAt           DateTime?
+  cancelledAt           DateTime?
+
+  tenant     Tenant              @relation(fields: [tenantId], references: [id])
+  restaurant Restaurant          @relation(fields: [restaurantId], references: [id])
+  events     ReservationEvent[]
+  transactions ReservationProviderTransaction[]
+
+  @@index([tenantId, restaurantId])
+}
+
+model ReservationEvent {
+  id            String   @id @default(cuid())
+  reservationId String
+  type          String
+  payload       Json?
+  createdAt     DateTime @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+}
+
+model ReservationProviderTransaction {
+  id            String   @id @default(cuid())
+  reservationId String
+  provider      String
+  operation     String
+  status        String
+  requestId     String?
+  response      Json?
+  attempts      Int      @default(1)
+  latencyMs     Int?
+  createdAt     DateTime @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+}
+
+// ---------------------------------------------------------------------------
+// Calls + transcripts + agent sessions + tool calls
+// ---------------------------------------------------------------------------
+model Call {
+  id             String   @id @default(cuid())
+  tenantId       String
+  callId         String   @unique
+  direction      String
+  type           String
+  status         String
+  restaurantId   String?
+  agentSessionId String?
+  to             String?
+  from           String?
+  startedAt      DateTime?
+  endedAt        DateTime?
+  createdAt      DateTime @default(now())
+
+  tenant     Tenant          @relation(fields: [tenantId], references: [id])
+  transcripts CallTranscript[]
+
+  @@index([tenantId])
+}
+
+model CallTranscript {
+  id     String @id @default(cuid())
+  callId String
+  speaker String
+  text   String
+  at     DateTime @default(now())
+
+  call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId])
+}
+
+model AgentSession {
+  id         String   @id @default(cuid())
+  tenantId   String
+  callId     String?
+  status     String   @default("ACTIVE")
+  startedAt  DateTime @default(now())
+  endedAt    DateTime?
+
+  tenant  Tenant     @relation(fields: [tenantId], references: [id])
+  toolCalls ToolCall[]
+
+  @@index([tenantId])
+}
+
+model ToolCall {
+  id        String   @id @default(cuid())
+  sessionId String
+  name      String
+  arguments Json?
+  result    Json?
+  status    String   @default("ok")
+  createdAt DateTime @default(now())
+
+  session AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+// ---------------------------------------------------------------------------
+// Users + RBAC
+// ---------------------------------------------------------------------------
+model Role {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  role         String
+  restaurantIds String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+model Notification {
+  id        String   @id @default(cuid())
+  tenantId  String
+  channel   String
+  recipient String
+  title     String
+  body      String
+  status    String   @default("queued")
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Transactional outbox for guaranteed event delivery
+// ---------------------------------------------------------------------------
+model OutboxEvent {
+  id         String   @id @default(cuid())
+  type       String
+  payload    Json?
+  context    Json?
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  publishedAt DateTime?
+
+  @@index([published, createdAt])
+}

@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# database
+prisma/*.db
+
+# logs
+*.log
+logs/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# editor
+.idea/
+.vscode/
+*.swp
+
+# runtime
+coverage/

@@ -1,0 +1,28 @@
+{
+  "name": "@sorani/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "db:generate": "prisma generate --schema ../../prisma/schema.prisma",
+    "db:push": "prisma db push --schema ../../prisma/schema.prisma",
+    "db:seed": "ts-node src/seed.ts"
+  },
+  "prisma": {
+    "schema": "../../prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "@sorani/shared": "*",
+    "@sorani/restaurants": "*",
+    "@sorani/users": "*"
+  },
+  "devDependencies": {
+    "prisma": "^5.14.0",
+    "typescript": "^5.4.5",
+    "ts-node": "^10.9.2",
+    "@types/node": "^20.12.7"
+  }
+}

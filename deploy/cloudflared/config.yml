@@ -1,0 +1,47 @@
+# ===========================================================================
+# PERMANENT + CUSTOM-DOMAIN public address via Cloudflare Tunnel
+# ===========================================================================
+# Goal: a real, permanent URL like  https://chat.yourdomain.com  → localhost:3000
+#
+# Prerequisites (free):
+#   1. You own a domain whose DNS is ON Cloudflare (add the site in Cloudflare,
+#      free plan). e.g. yourdomain.com
+#   2. cloudflared installed on this machine (already at /tmp/cloudflared.exe,
+#      or `winget install cloudflare/cloudflared`).
+#
+# Steps (once, then it's permanent):
+#
+#  a) Login cloudflared to your Cloudflare account:
+#        /tmp/cloudflared.exe tunnel login
+#
+#  b) Create & name a tunnel (prints a UUID):
+#        /tmp/cloudflared.exe tunnel create sorani
+#
+#  c) Put the returned UUID below and make this the tunnel config:
+#        tunnel: <UUID>
+#        credentials-file: C:/Users/Lenovo/.cloudflared/<UUID>.json
+#        ingress:
+#          - hostname: chat.yourdomain.com
+#            service: http://localhost:3000
+#          - service: http_status:404
+#     Save as:  C:/Users/Lenovo/.cloudflared/config.yml
+#
+#  d) Route a DNS hostname to the tunnel:
+#        /tmp/cloudflared.exe tunnel route dns sorani chat.yourdomain.com
+#
+#  e) Run the tunnel (this now serves the PERMANENT address):
+#        /tmp/cloudflared.exe tunnel run sorani
+#
+#  f) Optional: run it always as a service:
+#        /tmp/cloudflared.exe service install
+#
+# Result:  https://chat.yourdomain.com  is your REAL, permanent address.
+# ===========================================================================
+
+# Un-comment and fill once you have a tunnel UUID + domain:
+# tunnel: <YOUR-TUNNEL-UUID>
+# credentials-file: C:/Users/Lenovo/.cloudflared/<YOUR-TUNNEL-UUID>.json
+# ingress:
+#   - hostname: chat.yourdomain.com
+#     service: http://localhost:3000
+#   - service: http_status:404

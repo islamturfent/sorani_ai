@@ -1,0 +1,48 @@
+# ===========================================================================
+# FREE HOSTING — Render (backend API) + Vercel (frontend) + Neon (optional DB)
+# ===========================================================================
+# This file is the Render Blueprint for the backend API. Render offers a free
+# tier (spins down after inactivity — fine for demos).
+#
+# Steps (free, no credit card):
+#   1. Create an account at https://render.com
+#   2. New → Blueprint → connect your repo (or use Render's Git/GitHub deploy).
+#      If no repo, create a new "Web Service" instead:
+#        - Environment: Node
+#        - Build Command:  npm install && npm run build
+#        - Start Command:  npm run start:api
+#   3. Add env vars (from your .env):
+#        NODE_ENV=production
+#        PORT=4000
+#        KURDISH_TTS_API_KEY=...
+#        KURDISH_STT_API_KEY=...
+#        KURDISH_TTS_SPEAKER_ID=sorani_986
+#        TTS_PROVIDER=kurdishtts
+#        STT_PROVIDER=kurdishtts
+#        TZ=Asia/Erbil
+#   Render gives you a free public URL like:  https://sorani-api.onrender.com
+# ===========================================================================
+
+services:
+  - type: web
+    name: sorani-api
+    runtime: node
+    plan: free
+    buildCommand: "npm install && npm run build:api"
+    startCommand: "npm run start:api"
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: TZ
+        value: Asia/Erbil
+      - key: TTS_PROVIDER
+        value: kurdishtts
+      - key: STT_PROVIDER
+        value: kurdishtts
+      - key: KURDISH_TTS_SPEAKER_ID
+        value: sorani_986
+      # Add these from your .env (never commit real keys):
+      # KURDISH_TTS_API_KEY, KURDISH_STT_API_KEY

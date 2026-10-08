@@ -1,0 +1,72 @@
+# ===========================================================================
+# SORANI AI CALL CENTER - Docker Compose (infrastructure)
+# PostgreSQL + Redis. App containers are optional profiles.
+# ===========================================================================
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sorani-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sorani
+      POSTGRES_PASSWORD: sorani
+      POSTGRES_DB: sorani
+    ports:
+      - "5432:5432"
+    volumes:
+      - sorani_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sorani"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: sorani-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Optional: run the API inside Docker
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    container_name: sorani-api
+    restart: unless-stopped
+    profiles: ["full"]
+    environment:
+      - DATABASE_URL=postgresql://sorani:sorani@db:5432/sorani?schema=public
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+
+  # Optional: run the web UI inside Docker
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    container_name: sorani-web
+    restart: unless-stopped
+    profiles: ["full"]
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4000/api
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  sorani_pgdata:
