@@ -26,6 +26,6 @@
     "build:api": "npm run build --workspace @sorani/shared && npm run build --workspace @sorani/events && npm run build --workspace @sorani/validation && npm run build --workspace @sorani/restaurants && npm run build --workspace @sorani/reservations && npm run build --workspace @sorani/provider-llm && npm run build --workspace @sorani/provider-stt && npm run build --workspace @sorani/provider-tts && npm run build --workspace @sorani/provider-telephony && npm run build --workspace @sorani/provider-reservations && npm run build --workspace @sorani/ai && npm run build --workspace @sorani/voice && npm run build --workspace @sorani/telephony && npm run build --workspace @sorani/customers && npm run build --workspace @sorani/calls && npm run build --workspace @sorani/tenants && npm run build --workspace @sorani/users && npm run build --workspace @sorani/notifications && npm run build --workspace @sorani/analytics && npm run build --workspace @sorani/api"
   },
   "engines": {
-    "node": ">=18.17.0"
+    "node": "20.18.0"
   }
 }
