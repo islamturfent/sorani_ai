@@ -8,7 +8,7 @@ import Sidebar from './Sidebar';
  */
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isPublic = pathname === '/' || pathname.startsWith('/chat');
+  const isPublic = pathname === '/' || pathname.startsWith('/chat') || pathname.startsWith('/recording');
 
   if (isPublic) {
     return <div className="min-h-screen">{children}</div>;

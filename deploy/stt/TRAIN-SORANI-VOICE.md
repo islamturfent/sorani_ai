@@ -1,108 +1,98 @@
 # Kendi Kadın Sorani Sesini Piper'a Eğitmek (Colab)
 
-Bu rehber, **kendi kadın Sorani (کوردیی ناوەندی) sesini** Piper TTS modeline
-eğitmek içindir. Eğitilen modeli bilgisayarına indirip `local-piper` provider'ıyla
-kullanırsın — tamamen local, internet gerektirmez, **ticari kullanım serbest (MIT)**.
+Bu rehber, **kadın Sorani (کوردیی ناوەندی) sesini** Piper TTS'e eğitmek içindir
+(Seçenek A: Common Voice verisi — **kayıt yapmana gerek yok**). Eğitilen modeli
+bilgisayarına indirip `local-piper` provider'ıyla kullanırsın — tamamen local,
+internet gerektirmez, **ticari kullanım serbest (MIT)**.
 
-> **Neden eğitim?** Piper'ın hazır seslerinde Sorani yoktur; en yakını Kürtçe (Kurmanci)
-> `ku_TR-berfin_renas` kadın sesidir (şu an `local-piper` bunu kullanıyor). Gerçek
-> Sorani için kendi sesinle eğitmen gerekir.
-
-> **ÖNEMLİ — veri:** Hazır Sorani veri kümeleri (SoraniTTS, Gigant KTTS) **erkek** sestir
-> (CC BY 4.0). **Kadın** Sorani sesi için **kendi kayıtların** gerekir (aşağıda).
+> Piper'ın hazır seslerinde Sorani yoktur (en yakını Kurmanci kadın sesidir). Bu
+> rehber, Common Voice'taki **gerçek kadın Sorani konuşmacılarını** kullanarak senin
+> kendi Sorani sesini üretir.
 
 ---
 
-## 1) Veri topla: kendi kadın Sorani sesin
+## Özet — 3 adım
 
-Piper iyi bir sonuç için **~1 saat temiz**, tek kadın konuşmacı sesi önerir
-(minimum ~30 dk ile başlanabilir). Sorani cümlelerini yüksek sesle oku ve kaydet.
+1. **Colab not defterini çalıştır** (bedava GPU) → Common Voice'tan en bol kadın
+   Sorani konuşmacıyı seçip Piper'a eğitir → `model.onnx` + `model.onnx.json` üretir.
+2. **İki dosyayı bilgisayarına indir.**
+3. **`apply-sorani-voice.sh` ile kur + TTS'i devreye al.**
 
-**İstenen format:**
-- Tek konuşmacı (kadın), sessiz ortam, net mikrofon
-- Cümle başına ayrı `.wav` dosyası (3–15 saniye)
-- Her dosya için aynı adlı `.txt` transkript (Sorani yazısıyla)
-
-**Kolay veri toplama:** Sorani haber/kitap metinlerinden ~300–1000 kısa cümle seç.
-(Piper için 22.05 kHz mono önerilir; kayıt sonrası dönüşümü Colab script'i yapar.)
+> Süre: ~1-3 saat (Colab GPU). Model indirmesi internet ister; eğitim sonrası local,
+> internet'siz çalışır.
 
 ---
 
-## 2) Google Colab'da eğit
+## Adım 1 — Colab not defterini çalıştır
 
-Piper sesi eğitmek için `piper-training` paketini kullanırız (GPU gerekir, Colab bedava GPU yeterli).
-
-Bir Colab not defterinde şu hücreleri çalıştır:
-
-```python
-# 1) Kütüphaneler
-!pip install piper-training
-
-# 2) Dosyaları yükle: dataset.zip (wav + txt çiftleri)
-from google.colab import files
-uploaded = files.upload()          # dataset.zip yükle
-!unzip -q dataset.zip -d dataset
-!ls dataset | head
+Not defteri dosyası:
+```
+deploy/stt/colab/Train_Sorani_Piper.ipynb
 ```
 
-```python
-# 3) Piper datasetini hazırla (22.05k mono, metinler)
-!piper.train_prepare \
-    --dataset dataset \
-    --language ckb \
-    --sample-rate 22050 \
-    --config-out config.json
-```
+1. [colab.research.google.com](https://colab.research.google.com) aç.
+2. **File → Upload notebook** → `Train_Sorani_Piper.ipynb`'i yükle.
+3. **Runtime → Change runtime type → GPU** seç (bedava T4 Yeterli).
+4. Hücreleri **sırayla çalıştır** (her birinde ▶).
+   - 2. hücrede veri aşaması Common Voice ckb'yi indirir ve **en çok kayıt veren tek
+     kadın Sorani konuşmacıyı** otomatik seçer (tutarlı tek ses için).
+   - Eğitim hücresi ~1-3 saat sürer.
+5. Son hücre `model.onnx` ve `model.onnx.json` dosyalarını **indirir.**
 
-```python
-# 4) Eğit (Colab GPU; süre veri boyutuna göre ~1-3 saat)
-!piper.train --config-dir . --run-name sorani-female
-```
+> Common Voice'a erişim sorun olursa not defteri 13_0'a düşer. Eğer tamamen engellenirse
+> Mozilla Data Collective'den `ckb` verisini indirip elle yüklemen gerekebilir.
 
-```python
-# 5) ONNX'e dönüştür → indirilebilir iki dosya üretir
-!piper.export_onnx \
-    --run-dir runs/*/ \
-    --output-dir output
-!ls -la output/
+---
+
+## Adım 2 — Dosyaları bilgisayara koy
+
+İndirdiğin iki dosyayı (varsayılan adları `model.onnx`, `model.onnx.json` ise)
+`deploy/stt/` klasörüne şu adlarla kopyala:
+
+```
+deploy/stt/sorani_female.onnx
+deploy/stt/sorani_female.onnx.json   (opsiyonel)
 ```
 
 ---
 
-## 3) Modeli bilgisayarına indirip kullan
+## Adım 3 — Kur + devreye al
 
-Eğitim sonunda `output/` içinde şu iki dosya çıkar:
-- `*.onnx`           (model)
-- `*.onnx.json`      (config — ses ayarları)
-
-Bunları bilgisayarda şuraya koy:
-```
-deploy/stt/models/sorani_female_kadın.onnx
-deploy/stt/models/sorani_female_kadın.onnx.json
+```bash
+bash deploy/stt/apply-sorani-voice.sh
 ```
 
-Sonra `deploy/stt/tts_server.py` içindeki `MODEL` satırını yeni modele çevir:
-```python
-MODEL = os.path.join(HERE, "models", "sorani_female_kadın.onnx")
+Bu script `sorani_female.onnx`'i `deploy/stt/models/`'e kopyalar.
+
+Sonra TTS servisini **Sorani modeliyle** yeniden başlat:
+```bash
+# önce eski TTS servisini kapat
+# (uygun şekilde PID'ini bulup taskkill)
+PIPER_MODEL=sorani_female.onnx bash deploy/stt/start-voice.sh
 ```
 
-Ve `.env`'de TTS'i local kullan:
+Veya daha kalıcı — `deploy/stt/tts_server.py`'deki `ku_TR-berfin_renas-medium.onnx`
+varsayılan adını `sorani_female.onnx` yap.
+
+`.env`'de TTS local olsun:
 ```
 TTS_PROVIDER=local-piper
 ```
 
-Şunları yeniden başlat: `bash deploy/stt/start-voice.sh` + API. Artık platform
-`/api/voice/tts`'i **senin kadın Sorani sesinle** (local, internet yok) konuşur.
+Artık platform `/api/voice/tts`'i **senin kadın Sorani sesinle** (local) konuşur.
 
 ---
 
-## Alternatif (daha hızlı, erkek ses)
-Sorani önemi yoksa / sadece hızlı çalışsın istiyorsan mevcut Kurmanci kadın sesi
-`ku_TR-berfin_renas` zaten kurulu — `TTS_PROVIDER=local-piper` yeterli.
+## Notlar
+- **Tek konuşmacı:** Not defteri en çok kayıt veren tek kadın konuşmacıyı seçer;
+  bu, Piper'ın tutarlı tek ses üretmesi için önemlidir.
+- **Kayıt (Recording Studio):** Kendi ses kayıtlarınla eğitmek istersen
+  `apps/web/app/recording` (public adrese `/recording` ekleyerek) Sorani cümleleri
+  okuyup `wav + txt` topla, sonra aynı Colab akışını kullan.
+- **Alternatif:** Kurmanci kadın sesiyle devam etmek için hiçbir şey yapma —
+  `ku_TR-berfin_renas` zaten kurulu.
 
----
-
-## Kaynaklar
-- SoraniTTS veri kümesi (19 saat, ERKEK ses, CC BY): https://data.mendeley.com/datasets/jmtn248cc9
-- Piper belgeleri: https://github.com/OHF-Voice/piper1-gpl
-- Piper eğitim: https://github.com/rhasspy/piper-training
+## Dosyalar
+- Colab not defteri: `deploy/stt/colab/Train_Sorani_Piper.ipynb`
+- Devreye alma: `deploy/stt/apply-sorani-voice.sh`
+- TTS servisi: `deploy/stt/tts_server.py`

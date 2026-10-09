@@ -7,7 +7,8 @@ from pydantic import BaseModel
 import soundfile as sf
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MODEL = os.path.join(HERE, "models", "ku_TR-berfin_renas-medium.onnx")
+# Seçilen Piper modeli — PIPER_MODEL env ile değiştirilebilir (ör. Sorani eğitimi sonrası)
+MODEL = os.path.join(HERE, "models", os.environ.get("PIPER_MODEL", "ku_TR-berfin_renas-medium.onnx"))
 
 app = FastAPI(title="Local Piper TTS")
 
