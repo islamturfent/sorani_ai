@@ -126,6 +126,11 @@ export default function PublicChat() {
     }
     if (typeof MediaRecorder === 'undefined') { setErr('مایکڕۆفۆن نەدۆزرایەوە'); return; }
     setErr(''); setListening(true);
+    // Enumerate devices to detect NotFoundError early (audio input present?).
+    navigator.mediaDevices.enumerateDevices().then((devs) => {
+      const hasMic = devs.some((d) => d.kind === 'audioinput');
+      if (!hasMic) { setListening(false); setErr('هیچ مایکڕۆفۆنێک نەدۆزرایەوە لە سیستەمەکەت. تکایە مایکڕۆفۆنێک بهێنە و بنووسە.'); return; }
+    }).catch(() => { /* ignore — getUserMedia will surface the real error */ });
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       streamRef.current = stream;
       const type = (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm');
