@@ -31,7 +31,7 @@ import { AnalyticsService } from '@sorani/analytics';
 import { LLMProviderRegistry, LMStudioProvider, FallbackLLMProvider } from '@sorani/provider-llm';
 import { SimulationAgentLLM } from '@sorani/ai';
 import { STTProviderRegistry, MockSTTProvider, OpenAIWhisperProvider, kurdishSTTProvider, localWhisperSTTProvider } from '@sorani/provider-stt';
-import { TTSProviderRegistry, MockTTSProvider, elevenLabsTTSProvider, azureTTSProvider, kurdishTTSProvider, ROJIN_VOICE } from '@sorani/provider-tts';
+import { TTSProviderRegistry, MockTTSProvider, elevenLabsTTSProvider, azureTTSProvider, kurdishTTSProvider, localPiperTTSProvider, ROJIN_VOICE } from '@sorani/provider-tts';
 import { TelephonyProviderRegistry, MockTelephonyProvider, TwilioProvider } from '@sorani/provider-telephony';
 import { buildDefaultReservationProviders } from '@sorani/provider-reservations';
 
@@ -164,6 +164,7 @@ export function buildContainer(cfg?: Config): AppContainer {
     speakerId: config.provider.kurdishTtsSpeakerId,
     modelVersion: config.provider.kurdishTtsModelVersion,
   }));
+  ttsRegistry.register(localPiperTTSProvider({ url: config.provider.ttsPiperUrl }));
   const tts = ttsRegistry.get(config.provider.tts);
 
   // --- telephony providers

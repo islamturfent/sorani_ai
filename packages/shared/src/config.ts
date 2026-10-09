@@ -38,6 +38,7 @@ export interface Config {
     kurdishTtsApiKey: string;
     kurdishTtsSpeakerId: string;
     kurdishTtsModelVersion: string;
+    ttsPiperUrl: string;
   };
   mock: {
     latencyMs: number;
@@ -106,6 +107,7 @@ export function createConfig(overrides: Partial<Config> = {}): Config {
       kurdishTtsApiKey: env('KURDISH_TTS_API_KEY', ''),
       kurdishTtsSpeakerId: env('KURDISH_TTS_SPEAKER_ID', 'sorani_986'),
       kurdishTtsModelVersion: env('KURDISH_TTS_MODEL', 'v4'),
+      ttsPiperUrl: env('TTS_PIPER_URL', 'http://localhost:5101'),
     },
     mock: {
       latencyMs: envInt('MOCK_LATENCY_MS', 50),
