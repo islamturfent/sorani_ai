@@ -63,9 +63,11 @@ export default function PublicChat() {
   const recChunksRef = useRef<Blob[]>([]);
   const vadRafRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const silenceRef = useRef<number>(0);
+  const silenceRef = useRef<number>(0); // ms of accumulated silence
   const vadCtxRef = useRef<AudioContext | null>(null);
   const autoStopRef = useRef<boolean>(false);
+  const vadStartRef = useRef<number>(0); // timestamp when recording began
+  const vadLastRef = useRef<number>(0);
 
   // Backend TTS (Sorani female voice) with browser fallback.
   const playBase64 = (b64: string, format: string) => {
@@ -157,21 +159,30 @@ export default function PublicChat() {
         analyserRef.current = analyser;
         const data = new Uint8Array(analyser.fftSize);
         silenceRef.current = 0;
-        const tick = () => {
+        vadStartRef.current = performance.now();
+        vadLastRef.current = performance.now();
+        const GRACE_MS = 1100;    // allow time to start speaking (no auto-stop yet)
+        const SILENCE_MS = 1600;  // auto-stop after this much quiet
+        const tick = (now: number) => {
           if (!analyserRef.current) return;
           analyserRef.current.getByteTimeDomainData(data);
           let sum = 0;
           for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
           const rms = Math.sqrt(sum / data.length);
+          const sinceStart = now - vadStartRef.current;
+          // During the grace period, only reset silence when there is speech.
           if (rms < 0.02) {
-            silenceRef.current += 1;
-            if (autoStopRef.current && silenceRef.current > 18) { // ~1.3s of silence
-              autoStopRef.current = false;
-              stopListen();
-              return;
+            if (sinceStart > GRACE_MS) {
+              silenceRef.current += now - vadLastRef.current;
             }
           } else {
             silenceRef.current = 0;
+          }
+          vadLastRef.current = now;
+          if (autoStopRef.current && sinceStart > GRACE_MS && silenceRef.current > SILENCE_MS) {
+            autoStopRef.current = false;
+            stopListen();
+            return;
           }
           vadRafRef.current = requestAnimationFrame(tick);
         };
