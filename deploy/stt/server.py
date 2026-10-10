@@ -46,13 +46,19 @@ def stt(req: STTReq):
         inputs = proc(audio, return_tensors="pt", sampling_rate=16000)
         with torch.no_grad():
             # Greedy (num_beams=1) — several times faster on CPU than beam search,
-            # keeps Sorani quality (small Sorani fine-tune is the smallest Sorani model).
+            # keeps Sorani quality. Anti-repetition to stop the recurring loop
+            # ("بەوەیەکەیە ...") that small Whisper models fall into on short/noisy
+            # microphone clips.
             gen = model.generate(
                 inputs.input_features,
                 forced_decoder_ids=proc.get_decoder_prompt_ids(language="persian", task="transcribe"),
                 num_beams=1,
                 do_sample=False,
                 max_new_tokens=128,
+                no_repeat_ngram_size=2,
+                repetition_penalty=1.4,
+                early_stopping=True,
+                condition_on_prev_tokens=False,
             )
         text = proc.batch_decode(gen, skip_special_tokens=True)[0].strip()
         return {"text": text}
