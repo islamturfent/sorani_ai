@@ -262,7 +262,23 @@ export class SimulationAgentLLM implements LLMProvider {
         time: intent.time,
       }, model);
     }
-    return textReply(T.greeting, model);
+
+    const trimmed = lastUser.trim();
+    if (!trimmed || trimmed.length < 2) {
+      return textReply(T.greeting, model);
+    }
+
+    // Greeting / small talk → friendly greeting back (not an echo).
+    if (containsAny(trimmed, ['سڵاو', 'سلام', 'بەخێربێیت', 'hello', 'hi', 'slaw', 'choni', 'چۆنی'])) {
+      return textReply(lang === 'ckb' ? T.greeting : 'Hello! How can I help you today?', model);
+    }
+
+    // Unknown input: don't silently repeat the generic greeting. Echo what was
+    // heard and ask for clarification, so the caller sees we captured the speech.
+    if (lang === 'ckb') {
+      return textReply(`گەڕاوم بۆ: «${trimmed}». بە داخەوە تێگەیشتم نەبوو — دەتوانیت بە کورتی بڵێیت دەتەوێت چی؟ بۆ نموونە: ڕێستۆرانتێکی ئیتاڵی لە ئەربیل بۆ چوار کەس.`, model);
+    }
+    return textReply(`I heard: "${trimmed}". I didn't quite understand — could you say briefly what you'd like? For example: an Italian restaurant in Erbil for four people.`, model);
   }
 
   private finalizeConfirm(ok: boolean, restaurant: string | undefined, lang: 'ckb' | 'en'): string {
