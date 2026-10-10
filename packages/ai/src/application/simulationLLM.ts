@@ -20,6 +20,13 @@ const RESTAURANTS: { id: string; name: string; city: string; cuisine: string }[]
   { id: 'rest-erbil-garden', name: 'Erbil Garden', city: 'Erbil', cuisine: 'kurdish' },
   { id: 'rest-family', name: 'Family Restaurant', city: 'Erbil', cuisine: 'kurdish' },
   { id: 'rest-sushi', name: 'Sushi Restaurant', city: 'Erbil', cuisine: 'sushi' },
+  { id: 'rest-arabic', name: 'Arabic House', city: 'Erbil', cuisine: 'arabic' },
+  { id: 'rest-chinese', name: 'Golden Dragon', city: 'Sulaymaniyah', cuisine: 'chinese' },
+  { id: 'rest-seafood', name: 'Sea Breeze', city: 'Erbil', cuisine: 'seafood' },
+  { id: 'rest-kebab', name: 'Kebab House', city: 'Erbil', cuisine: 'kebab' },
+  { id: 'rest-pizza', name: 'Pizza Roma', city: 'Erbil', cuisine: 'pizza' },
+  { id: 'rest-fastfood', name: 'Burger Corner', city: 'Erbil', cuisine: 'fast food' },
+  { id: 'rest-veg', name: 'Green Garden', city: 'Erbil', cuisine: 'vegetarian' },
 ];
 
 interface BookingIntent {
@@ -42,6 +49,8 @@ const NUMBER_WORDS: [string, number][] = [
   ['شەش', 6], ['حەوت', 7], ['هەشت', 8], ['نۆ', 9], ['دە', 10],
   ['one', 1], ['two', 2], ['three', 3], ['four', 4], ['five', 5],
   ['six', 6], ['seven', 7], ['eight', 8], ['nine', 9], ['ten', 10],
+  ['یازدە', 11], ['دوازدە', 12], ['سیانزە', 13], ['چواردە', 14], ['پازدە', 15],
+  ['شازدە', 16], ['حەڤدە', 17], ['هەژدە', 18], ['نۆزدە', 19], ['بست', 20],
 ];
 
 function toArabicIndicInt(s: string): number {
@@ -66,8 +75,19 @@ function containsAny(text: string, words: string[]): boolean {
 
 function pickRestaurant(text: string): BookingIntent {
   const t = text.toLowerCase();
-  for (const r of RESTAURANTS) {
-    if (t.includes(r.name.toLowerCase()) || (r.name.split(' ')[0] && t.includes(r.name.split(' ')[0].toLowerCase()))) {
+  // Restaurant name aliases (Sorani + English) for direct picks.
+  const nameMap: Record<string, string> = {
+    'hewar': 'Hewar Restaurant', 'ھەوار': 'Hewar Restaurant', 'هەوار': 'Hewar Restaurant',
+    'machu': 'Machu Restaurant', 'ماچو': 'Machu Restaurant',
+    'italian house': 'Italian House', 'ئیتاڵی هاوس': 'Italian House', 'ئیتالی هاوس': 'Italian House',
+    'abc steakhouse': 'ABC Steakhouse', 'steakhouse': 'ABC Steakhouse', 'ستێک': 'ABC Steakhouse',
+    'erbil garden': 'Erbil Garden', 'باخی هەولێر': 'Erbil Garden', 'باخچه‌ی هەولێر': 'Erbil Garden',
+    'family restaurant': 'Family Restaurant', 'ڕێستۆرانتەکەمان': 'Family Restaurant',
+    'sushi': 'Sushi Restaurant', 'سوشی': 'Sushi Restaurant',
+  };
+  for (const [key, name] of Object.entries(nameMap)) {
+    if (t.includes(key)) {
+      const r = RESTAURANTS.find((x) => x.name === name)!;
       return { restaurantId: r.id, restaurantName: r.name, city: r.city, cuisine: r.cuisine };
     }
   }
@@ -82,16 +102,66 @@ function extractIntent(allUserText: string): BookingIntent {
   if (containsAny(t, ['sulaymaniyah', 'سڵێمانی', 'سلێمانی'])) intent.city = 'Sulaymaniyah';
   else if (containsAny(t, ['erbil', 'ئێربیل'])) intent.city = 'Erbil';
 
-  if (containsAny(t, ['italian', 'ئیتاڵی'])) intent.cuisine = 'Italian';
+  if (containsAny(t, ['italian', 'ئیتاڵی', 'ئیتالی'])) intent.cuisine = 'Italian';
   else if (containsAny(t, ['sushi', 'سوشی'])) intent.cuisine = 'Sushi';
-  else if (containsAny(t, ['steak', 'ستیک', 'steakhouse'])) intent.cuisine = 'Steakhouse';
+  else if (containsAny(t, ['steak', 'ستیک', 'ستێک', 'steakhouse'])) intent.cuisine = 'Steakhouse';
   else if (containsAny(t, ['kurdish', 'کوردی'])) intent.cuisine = 'Kurdish';
   else if (containsAny(t, ['turkish', 'تورکی'])) intent.cuisine = 'Turkish';
+  else if (containsAny(t, ['arabic', 'عەرەبی', 'ئەعەرەب'])) intent.cuisine = 'Arabic';
+  else if (containsAny(t, ['chinese', 'چینی'])) intent.cuisine = 'Chinese';
+  else if (containsAny(t, ['indian', 'هیندی'])) intent.cuisine = 'Indian';
+  else if (containsAny(t, ['mexican', 'مەکسیکی'])) intent.cuisine = 'Mexican';
+  else if (containsAny(t, ['seafood', 'دەریایی', 'ماسی'])) intent.cuisine = 'Seafood';
+  else if (containsAny(t, ['fast food', 'فاست فوود', 'فاستفوود', 'برگر'])) intent.cuisine = 'Fast Food';
+  else if (containsAny(t, ['vegetarian', 'ڤێجیتاریان', 'گیاخۆر'])) intent.cuisine = 'Vegetarian';
+  else if (containsAny(t, ['pizza', 'پیتزا'])) intent.cuisine = 'Pizza';
+  else if (containsAny(t, ['kebab', 'کەباب', 'کەبەب'])) intent.cuisine = 'Kebab';
 
   const guests = guessGuests(allUserText);
   if (guests) intent.guests = guests;
 
+  // Date word (today / tomorrow)
+  if (containsAny(t, ['سبەی', 'سوبەی', 'tomorrow', 'سبەینێ'])) intent.date = tomorrowDate();
+
+  // Time: e.g. '7:30', '٧:٣٠', or 'کاتژمێر ٧'.
+  const tim = guessTime(allUserText);
+  if (tim) intent.time = tim;
+
   return intent;
+}
+
+/** Date for tomorrow (YYYY-MM-DD). */
+function tomorrowDate(): string {
+  const d = new Date(Date.now() + 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Best-effort time parser. Accepts '7:30', '19:30', '٧:٣٠', or a bare hour
+ * ('کاتژمێر ٧') → always 'HH:MM' 24h.
+ */
+function guessTime(text: string): string | undefined {
+  const t = text.replace(/['’‘`]/g, '"');
+  // explicit hh:mm (arabic or ascii digits)
+  const m = t.match(/([٠-٩0-9]{1,2})\s*[:.]\s*([٠-٩0-9]{2})/);
+  if (m) {
+    const h = toArabicIndicInt(m[1]);
+    const min = toArabicIndicInt(m[2]);
+    if (h >= 0 && h <= 23 && min >= 0 && min <= 59) return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+  }
+  // 'کاتژمێر ٧' / 'at 7' → treat as 19:00 in evening, else hour:00
+  const timeWords = t.split(/\s+/);
+  const idx = timeWords.findIndex((w) => w.includes('کاتژمێر') || w === 'at' || w === 'saat');
+  if (idx >= 0 && timeWords[idx + 1]) {
+    // Extract a digit that may be Arabic-Indic (٠-٩) or ASCII (0-9).
+    const digits = timeWords[idx + 1].split('').filter((c) => /[٠-٩0-9]/.test(c)).join('');
+    const h = toArabicIndicInt(digits);
+    if (h >= 1 && h <= 23) {
+      const hour = h <= 12 ? h + 7 : h; // evening-ish default
+      return `${String(Math.min(hour, 23)).padStart(2, '0')}:00`;
+    }
+  }
+  return undefined;
 }
 
 function isAffirmative(text: string, lang: 'ckb' | 'en'): boolean {

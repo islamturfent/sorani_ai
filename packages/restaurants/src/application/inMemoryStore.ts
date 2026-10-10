@@ -169,8 +169,80 @@ export function seedRestaurants(): Restaurant[] {
     status: RestaurantStatus.ACTIVE,
   };
 
+  const kebab: Restaurant = {
+    id: 'rest-kebab',
+    name: 'Kebab House',
+    description: 'Grilled kebab and Middle Eastern classics in Erbil.',
+    cuisineTypes: [CuisineType.KEBAB, CuisineType.MIDDLE_EASTERN],
+    locations: [
+      loc('rest-kebab', 'Erbil - Azadi', 'Azadi, Erbil', 'Erbil', 'Iraq', 'Asia/Baghdad', { phone: '+9647508000001' }),
+    ],
+    phoneNumbers: ['+9647508000001'],
+    priceRange: PriceRange.MEDIUM,
+    rating: 4.3,
+    features: [RestaurantFeature.FAMILY_FRIENDLY, RestaurantFeature.PARKING],
+    reservationProvider: RestaurantProviderType.PROVIDER_A,
+    directBookingEnabled: true,
+    phoneBookingEnabled: true,
+    status: RestaurantStatus.ACTIVE,
+  };
+
+  const arabic: Restaurant = {
+    id: 'rest-arabic',
+    name: 'Arabic House',
+    description: 'Authentic Arabic and Levantine dining in Erbil.',
+    cuisineTypes: [CuisineType.ARABIC, CuisineType.MIDDLE_EASTERN],
+    locations: [
+      loc('rest-arabic', 'Erbil - Ainkawa', 'Ainkawa, Erbil', 'Erbil', 'Iraq', 'Asia/Baghdad', { phone: '+9647509000001' }),
+    ],
+    phoneNumbers: ['+9647509000001'],
+    priceRange: PriceRange.MEDIUM,
+    rating: 4.4,
+    features: [RestaurantFeature.FAMILY_FRIENDLY, RestaurantFeature.WIFI],
+    reservationProvider: RestaurantProviderType.PROVIDER_B,
+    directBookingEnabled: true,
+    phoneBookingEnabled: true,
+    status: RestaurantStatus.ACTIVE,
+  };
+
+  const pizza: Restaurant = {
+    id: 'rest-pizza',
+    name: 'Pizza Roma',
+    description: 'Wood-fired pizzas in Sulaymaniyah.',
+    cuisineTypes: [CuisineType.PIZZA, CuisineType.ITALIAN],
+    locations: [
+      loc('rest-pizza', 'Sulaymaniyah - Salim', 'Salim Street, Sulaymaniyah', 'Sulaymaniyah', 'Iraq', 'Asia/Baghdad', { phone: '+9647510000001' }),
+    ],
+    phoneNumbers: ['+9647510000001'],
+    priceRange: PriceRange.MEDIUM,
+    rating: 4.2,
+    features: [RestaurantFeature.FAMILY_FRIENDLY, RestaurantFeature.WIFI],
+    reservationProvider: RestaurantProviderType.PROVIDER_C,
+    directBookingEnabled: true,
+    phoneBookingEnabled: true,
+    status: RestaurantStatus.ACTIVE,
+  };
+
+  const chinese: Restaurant = {
+    id: 'rest-chinese',
+    name: 'Golden Dragon',
+    description: 'Chinese cuisine in Sulaymaniyah.',
+    cuisineTypes: [CuisineType.CHINESE],
+    locations: [
+      loc('rest-chinese', 'Sulaymaniyah - Salim', 'Salim Street, Sulaymaniyah', 'Sulaymaniyah', 'Iraq', 'Asia/Baghdad', { phone: '+9647511000001' }),
+    ],
+    phoneNumbers: ['+9647511000001'],
+    priceRange: PriceRange.MEDIUM,
+    rating: 4.1,
+    features: [RestaurantFeature.WIFI, RestaurantFeature.PRIVATE_ROOMS],
+    reservationProvider: RestaurantProviderType.DIRECT_PHONE,
+    directBookingEnabled: false,
+    phoneBookingEnabled: true,
+    status: RestaurantStatus.ACTIVE,
+  };
+
   machu.cuisineTypes = [CuisineType.OTHER, CuisineType.SEAFOOD];
-  return [hewar, machu, italian, abc, erbilGarden, family, sushi];
+  return [hewar, machu, italian, abc, erbilGarden, family, sushi, kebab, arabic, pizza, chinese];
 }
 
 export class InMemoryRestaurantRepository implements RestaurantRepository {

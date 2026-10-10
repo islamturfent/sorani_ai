@@ -18,6 +18,11 @@ export enum CuisineType {
   INDIAN = 'INDIAN',
   MEXICAN = 'MEXICAN',
   SEAFOOD = 'SEAFOOD',
+  KEBAB = 'KEBAB',
+  PIZZA = 'PIZZA',
+  ARABIC = 'ARABIC',
+  VEGETARIAN = 'VEGETARIAN',
+  FAST_FOOD = 'FAST_FOOD',
   OTHER = 'OTHER',
 }
 
