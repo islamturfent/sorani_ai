@@ -45,12 +45,14 @@ def stt(req: STTReq):
             audio = audio[idx]
         inputs = proc(audio, return_tensors="pt", sampling_rate=16000)
         with torch.no_grad():
+            # Greedy (num_beams=1) — several times faster on CPU than beam search,
+            # keeps Sorani quality (small Sorani fine-tune is the smallest Sorani model).
             gen = model.generate(
                 inputs.input_features,
                 forced_decoder_ids=proc.get_decoder_prompt_ids(language="persian", task="transcribe"),
-                num_beams=5,
+                num_beams=1,
                 do_sample=False,
-                max_new_tokens=400,
+                max_new_tokens=128,
             )
         text = proc.batch_decode(gen, skip_special_tokens=True)[0].strip()
         return {"text": text}
