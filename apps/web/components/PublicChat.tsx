@@ -61,6 +61,11 @@ export default function PublicChat() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recChunksRef = useRef<Blob[]>([]);
+  const vadRafRef = useRef<number | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const silenceRef = useRef<number>(0);
+  const vadCtxRef = useRef<AudioContext | null>(null);
+  const autoStopRef = useRef<boolean>(false);
 
   // Backend TTS (Sorani female voice) with browser fallback.
   const playBase64 = (b64: string, format: string) => {
@@ -140,6 +145,38 @@ export default function PublicChat() {
       mr.onstop = () => { stream.getTracks().forEach((t) => t.stop()); streamRef.current = null; void handleChunks(); };
       mr.start();
       mediaRecorderRef.current = mr;
+      // Auto-stop: when the speaker pauses ~1.3s, stop and transcribe automatically.
+      autoStopRef.current = true;
+      const AC = window.AudioContext || (window as any).webkitAudioContext;
+      if (!vadCtxRef.current) vadCtxRef.current = new AC();
+      try {
+        const source = vadCtxRef.current.createMediaStreamSource(stream);
+        const analyser = vadCtxRef.current.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+        const data = new Uint8Array(analyser.fftSize);
+        silenceRef.current = 0;
+        const tick = () => {
+          if (!analyserRef.current) return;
+          analyserRef.current.getByteTimeDomainData(data);
+          let sum = 0;
+          for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
+          const rms = Math.sqrt(sum / data.length);
+          if (rms < 0.02) {
+            silenceRef.current += 1;
+            if (autoStopRef.current && silenceRef.current > 18) { // ~1.3s of silence
+              autoStopRef.current = false;
+              stopListen();
+              return;
+            }
+          } else {
+            silenceRef.current = 0;
+          }
+          vadRafRef.current = requestAnimationFrame(tick);
+        };
+        vadRafRef.current = requestAnimationFrame(tick);
+      } catch { /* VAD optional */ }
     }).catch((e: any) => {
       setListening(false);
       const name = e?.name || e?.message || String(e);
@@ -151,6 +188,8 @@ export default function PublicChat() {
     });
   };
   const stopListen = () => {
+    autoStopRef.current = false;
+    if (vadRafRef.current) { cancelAnimationFrame(vadRafRef.current); vadRafRef.current = null; }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     } else {
