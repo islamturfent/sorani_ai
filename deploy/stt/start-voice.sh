@@ -2,6 +2,8 @@
 # Start local voice services (Sorani Whisper STT on :5100 + Piper TTS on :5101).
 set -e
 export PATH="/c/Users/Lenovo/AppData/Local/Programs/Python/Python311:$PATH"
+export PYTHONIOENCODING=utf-8
+export PYTHONUTF8=1
 DIR="$(cd "$(dirname "$0")" && pwd)"
 nohup python "$DIR/server.py" > /tmp/sorani-logs/stt.log 2>&1 &
 echo "Sorani STT starting on http://localhost:5100"

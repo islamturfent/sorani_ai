@@ -1,8 +1,11 @@
-# Installed via system Python 3.11 (no venv required on this machine).
-torch
-transformers
+# STT: faster-whisper on CTranslate2 int8 (CPU). TTS: Piper (ONNX).
+faster-whisper
+ctranslate2
 librosa
 soundfile
 fastapi
 uvicorn
 numpy
+# TTS (Piper / coqui) - uncomment when installing voice deps:
+# torch
+# transformers
