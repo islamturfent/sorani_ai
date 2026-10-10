@@ -57,6 +57,7 @@ export default function PublicChat() {
   const [voiceReply, setVoiceReply] = useState(false);
   const [volume, setVolume] = useState(1);
   const [browserOk, setBrowserOk] = useState<boolean | null>(null);
+  const [liveLevel, setLiveLevel] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -169,9 +170,10 @@ export default function PublicChat() {
           let sum = 0;
           for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
           const rms = Math.sqrt(sum / data.length);
+          setLiveLevel(Math.min(100, Math.round(rms * 300)));
           const sinceStart = now - vadStartRef.current;
           // During the grace period, only reset silence when there is speech.
-          if (rms < 0.02) {
+          if (rms < 0.012) {
             if (sinceStart > GRACE_MS) {
               silenceRef.current += now - vadLastRef.current;
             }
@@ -293,6 +295,14 @@ export default function PublicChat() {
                 {listening
                   ? (lang === 'ckb' ? '🔴 گوێگرتن… تکایە قسە بکە' : '🔴 Listening…')
                   : (lang === 'ckb' ? 'نووسینی قسە…' : 'Transcribing…')}
+              </div>
+            )}
+            {listening && (
+              <div className="flex items-center gap-2 pl-1">
+                <span className="text-[10px] text-slate-400 shrink-0">🔊</span>
+                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 transition-all" style={{ width: `${liveLevel}%` }} />
+                </div>
               </div>
             )}
             <div className="flex items-center gap-4 text-xs text-slate-400 pl-1">
