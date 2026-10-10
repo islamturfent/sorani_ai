@@ -220,12 +220,27 @@ export default function PublicChat() {
       const AC = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AC();
       const audio = await ctx.decodeAudioData(buf);
-      const resampled = resampleTo(audio.getChannelData(0), audio.sampleRate, 16000);
+      const rawSamples = audio.getChannelData(0);
+      // Diagnose: is there actually audio? If the clip is (near) silent, tell the
+      // user to check the microphone instead of sending empty audio to the STT.
+      let sum = 0;
+      for (let i = 0; i < rawSamples.length; i++) { const v = rawSamples[i]; sum += v * v; }
+      const rms = Math.sqrt(sum / Math.max(1, rawSamples.length));
+      const durationS = audio.duration || 0;
+      const resampled = resampleTo(rawSamples, audio.sampleRate, 16000);
       await ctx.close();
+      if (rms < 0.01 || durationS < 0.3) {
+        setListening(false); setTranscribing(false);
+        setErr(rms < 0.01
+          ? 'مایکڕۆفۆن دەنگ ناگریت — تکایە دڵنیابە لەوەی مایکڕۆفۆن چالاکە و نزیکە، تکایە بە دەنگی بەرز قسە بکە.'
+          : 'قسەکەت زۆر کورت بوو، تکایە دووبارە هەوڵبدەرەوە.');
+        return;
+      }
       const wav = encodeWav(resampled, 16000);
       let bin = ''; const u = new Uint8Array(wav);
       for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode(...u.subarray(i, i + 0x8000));
       setListening(false);
+      console.log('[mic] recorded rms=', rms.toFixed(3), 'dur=', durationS.toFixed(2), 's');
       await transcribe(btoa(bin));
     } catch {
       setListening(false); setTranscribing(false);
